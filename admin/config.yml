@@ -1,0 +1,39 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+collections:
+  - name: "site"
+    label: "সাইটের তথ্য"
+    delete: false
+    files:
+      - name: "content"
+        label: "মূল তথ্য, পরিসংখ্যান, পরিচয় ও ভিডিও"
+        file: "content/site.json"
+        fields:
+          - { label: "উপরের ছোট লাইন", name: "kicker", widget: "string" }
+          - { label: "পরিচয়ের লেখা", name: "lead", widget: "text" }
+          - { label: "ছবির ট্যাগ", name: "badge", widget: "string" }
+          - label: "পরিসংখ্যান"
+            name: "stats"
+            widget: "list"
+            fields:
+              - { label: "সংখ্যা", name: "value", widget: "string" }
+              - { label: "নাম", name: "label", widget: "string" }
+          - label: "পরিচয় তালিকা"
+            name: "bio"
+            widget: "list"
+            fields:
+              - { label: "শিরোনাম", name: "label", widget: "string" }
+              - { label: "বিবরণ", name: "text", widget: "text" }
+          - label: "ভিডিও"
+            name: "videos"
+            widget: "list"
+            fields:
+              - { label: "শিরোনাম", name: "title", widget: "string" }
+              - { label: "ভিউ", name: "views", widget: "string" }
+              - { label: "লিংক", name: "link", widget: "string" }
+              - { label: "থাম্বনেইল", name: "thumb", widget: "image" }

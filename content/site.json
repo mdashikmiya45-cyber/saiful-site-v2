@@ -1,0 +1,57 @@
+{
+  "kicker": "Funny content creator · Gazipur",
+  "lead": "একজন মজার কনটেন্ট ক্রিয়েটর। রিলস, বিনোদন আর স্থানীয় সমাজের গল্প নিয়ে কাজ করেন।",
+  "badge": "Funny reels & entertainment",
+  "stats": [
+    {
+      "value": "6.3K",
+      "label": "Followers"
+    },
+    {
+      "value": "2K+",
+      "label": "Video views"
+    },
+    {
+      "value": "2",
+      "label": "Years creating"
+    },
+    {
+      "value": "1",
+      "label": "New video every week"
+    }
+  ],
+  "bio": [
+    {
+      "label": "গ্রাম ও এলাকা",
+      "text": "জামালপুরের দেওয়ানগঞ্জের বরখাল এলাকা।"
+    },
+    {
+      "label": "বর্তমান অবস্থান",
+      "text": "গাজীপুরের কড্ডা বাজার এলাকায় থাকেন, আর মাঝে মাঝে নিজ এলাকা দেওয়ানগঞ্জে যাতায়াত করেন।"
+    },
+    {
+      "label": "কনটেন্ট",
+      "text": "ফেসবুকে মূলত রিলস ভিডিও, মজার বিনোদনমূলক কনটেন্ট, আর গাজীপুর ও দেওয়ানগঞ্জের স্থানীয় সামাজিক বিষয়গুলো শেয়ার করেন।"
+    }
+  ],
+  "videos": [
+    {
+      "title": "ভাঙ্গেনি গো",
+      "views": "2K views",
+      "link": "https://www.facebook.com/share/r/1E49Dfvs4m/",
+      "thumb": "images/thumb-1.jpg"
+    },
+    {
+      "title": "নদীতে লাশ",
+      "views": "2.1K views",
+      "link": "https://www.facebook.com/reel/1645209777104299",
+      "thumb": "images/thumb-2.jpg"
+    },
+    {
+      "title": "ভিডিও দেখে মজা পাবেন",
+      "views": "1.2K views",
+      "link": "https://www.facebook.com/share/r/18bvvotNa5/",
+      "thumb": "images/thumb-3.jpg"
+    }
+  ]
+}
