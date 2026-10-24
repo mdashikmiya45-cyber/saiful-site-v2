@@ -2,11 +2,227 @@
 <html lang="bn">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <title>সাইট ব্যবস্থাপনা</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#f4f6f8; --card:#fff; --line:#e2e6ea; --text:#1d2a2f; --muted:#66727a; --accent:#0f7a6e; --danger:#c0392b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Hind Siliguri", system-ui, sans-serif; background:var(--bg); color:var(--text); font-size:16px; line-height:1.55; }
+  header { background:#fff; border-bottom:1px solid var(--line); padding:14px 20px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:5; }
+  h1 { font-size:1.1rem; margin:0; }
+  main { max-width:820px; margin:24px auto; padding:0 16px 120px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; margin-bottom:18px; }
+  .card h2 { font-size:1.05rem; margin:0 0 14px; }
+  label { display:block; font-size:.9rem; color:var(--muted); margin-bottom:12px; }
+  input, textarea { width:100%; font:inherit; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px 12px; margin-top:6px; background:#fff; }
+  textarea { min-height:80px; resize:vertical; }
+  input[type=file] { padding:8px; }
+  .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .item { border:1px dashed var(--line); border-radius:10px; padding:14px; margin-bottom:12px; }
+  .item-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-weight:600; }
+  button { font:inherit; border:0; border-radius:8px; padding:10px 16px; cursor:pointer; background:var(--accent); color:#fff; }
+  button.ghost { background:#fff; color:var(--text); border:1px solid var(--line); }
+  button.danger { background:#fff; color:var(--danger); border:1px solid #f0c4bf; padding:6px 12px; }
+  .bar { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1px solid var(--line); padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+  .msg { font-size:.9rem; color:var(--muted); }
+  .thumbprev { display:block; width:120px; aspect-ratio:2/3; object-fit:cover; border-radius:8px; border:1px solid var(--line); margin-top:8px; }
+  #login { text-align:center; padding:48px 20px; }
+  .hidden { display:none !important; }
+  @media (max-width:600px) { .row { grid-template-columns:1fr; } }
+</style>
 </head>
 <body>
-<script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-<script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+<header>
+  <h1>সাইট ব্যবস্থাপনা</h1>
+  <button class="ghost hidden" id="logout">লগআউট</button>
+</header>
+
+<main>
+  <div id="login" class="card">
+    <h2>লগইন করুন</h2>
+    <p class="msg">আপনার ইমেইল আর পাসওয়ার্ড দিয়ে লগইন করুন।</p>
+    <button id="loginBtn">লগইন</button>
+  </div>
+
+  <div id="app" class="hidden">
+    <div class="card">
+      <h2>প্রধান লেখা</h2>
+      <label>উপরের ছোট লাইন<input id="kicker"></label>
+      <label>পরিচয়ের লেখা<textarea id="lead"></textarea></label>
+      <label>ছবির ট্যাগ<input id="badge"></label>
+    </div>
+
+    <div class="card">
+      <h2>পরিসংখ্যান</h2>
+      <div id="stats"></div>
+      <button class="ghost" data-add="stats">+ নতুন ঘর</button>
+    </div>
+
+    <div class="card">
+      <h2>পরিচয় তালিকা</h2>
+      <div id="bio"></div>
+      <button class="ghost" data-add="bio">+ নতুন অংশ</button>
+    </div>
+
+    <div class="card">
+      <h2>ভিডিও</h2>
+      <div id="videos"></div>
+      <button class="ghost" data-add="videos">+ নতুন ভিডিও</button>
+    </div>
+  </div>
+</main>
+
+<div class="bar hidden" id="bar">
+  <span class="msg" id="status">লোড হচ্ছে...</span>
+  <button id="save">সংরক্ষণ করুন</button>
+</div>
+
+
+<script>
+const API = "/.netlify/git/github/contents/";
+const LISTS = {
+  stats:  { title: s => s.label || "ঘর", fields: [["value","সংখ্যা"],["label","নাম"]], blank: { value:"", label:"" } },
+  bio:    { title: b => b.label || "অংশ", fields: [["label","শিরোনাম"],["text","বিবরণ","textarea"]], blank: { label:"", text:"" } },
+  videos: { title: v => v.title || "ভিডিও", fields: [["title","শিরোনাম"],["views","ভিউ"],["link","লিংক"]], blank: { title:"", views:"", link:"", thumb:"" }, thumb: true },
+};
+let data = null, fileSha = null;
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const setStatus = t => document.getElementById("status").textContent = t;
+const markDirty = () => setStatus("পরিবর্তন সংরক্ষিত হয়নি");
+const b64encode = s => btoa(unescape(encodeURIComponent(s)));
+const b64decode = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ""))));
+
+async function authHeader() {
+  const user = netlifyIdentity.currentUser();
+  if (!user) throw new Error("আবার লগইন করুন");
+  return { Authorization: "Bearer " + await user.jwt() };
+}
+
+async function loadContent() {
+  const r = await fetch(API + "content/site.json?ref=main", { headers: await authHeader() });
+  if (!r.ok) throw new Error("ফাইল পড়া যায়নি (" + r.status + ")");
+  const j = await r.json();
+  fileSha = j.sha;
+  data = JSON.parse(b64decode(j.content));
+}
+
+function renderAll() {
+  document.getElementById("kicker").value = data.kicker || "";
+  document.getElementById("lead").value = data.lead || "";
+  document.getElementById("badge").value = data.badge || "";
+  renderLists();
+}
+
+function renderLists() {
+  for (const name of Object.keys(LISTS)) {
+    const cfg = LISTS[name];
+    const box = document.getElementById(name);
+    box.innerHTML = (data[name] || []).map((it, i) => `
+      <div class="item" data-list="${name}" data-idx="${i}">
+        <div class="item-head"><span>${esc(cfg.title(it))}</span><button class="danger" data-del>মুছুন</button></div>
+        ${cfg.fields.map(([k, label, type]) => type === "textarea"
+          ? `<label>${label}<textarea data-k="${k}">${esc(it[k])}</textarea></label>`
+          : `<label>${label}<input data-k="${k}" value="${esc(it[k])}"></label>`).join("")}
+        ${cfg.thumb ? `<label>থাম্বনেইল ছবি<input type="file" accept="image/*" data-file>${it.thumb ? `<img class="thumbprev" src="${esc(it.thumb)}" alt="">` : ""}</label>` : ""}
+      </div>`).join("");
+  }
+}
+
+async function uploadImage(file) {
+  const dataUrl = await new Promise((res, rej) => {
+    const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file);
+  });
+  const name = Date.now() + "-" + file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+  const path = "images/uploads/" + name;
+  const r = await fetch(API + path, {
+    method: "PUT",
+    headers: { ...(await authHeader()), "Content-Type": "application/json" },
+    body: JSON.stringify({ message: "Upload " + name, content: dataUrl.split(",")[1], branch: "main" }),
+  });
+  if (!r.ok) throw new Error("GitHub " + r.status);
+  return path;
+}
+
+// Top-level text fields
+["kicker", "lead", "badge"].forEach(id =>
+  document.getElementById(id).addEventListener("input", e => { data[id] = e.target.value; markDirty(); }));
+
+const app = document.getElementById("app");
+
+app.addEventListener("input", e => {
+  const item = e.target.closest("[data-list]"); const k = e.target.dataset.k;
+  if (!item || !k) return;
+  data[item.dataset.list][+item.dataset.idx][k] = e.target.value; markDirty();
+});
+
+app.addEventListener("click", e => {
+  const add = e.target.dataset.add;
+  if (add) { (data[add] = data[add] || []).push({ ...LISTS[add].blank }); renderLists(); markDirty(); return; }
+  if (e.target.matches("[data-del]")) {
+    const item = e.target.closest("[data-list]");
+    data[item.dataset.list].splice(+item.dataset.idx, 1); renderLists(); markDirty();
+  }
+});
+
+app.addEventListener("change", async e => {
+  if (!e.target.matches("[data-file]")) return;
+  const item = e.target.closest("[data-list]"); const file = e.target.files[0];
+  if (!file) return;
+  setStatus("ছবি আপলোড হচ্ছে...");
+  try {
+    data[item.dataset.list][+item.dataset.idx].thumb = await uploadImage(file);
+    renderLists(); setStatus("ছবি যোগ হয়েছে। এখন সংরক্ষণ করুন।");
+  } catch (err) { setStatus("ছবি আপলোড হয়নি: " + err.message); }
+});
+
+document.getElementById("save").onclick = async () => {
+  setStatus("সংরক্ষণ হচ্ছে...");
+  try {
+    const r = await fetch(API + "content/site.json", {
+      method: "PUT",
+      headers: { ...(await authHeader()), "Content-Type": "application/json" },
+      body: JSON.stringify({ message: "Update site content", content: b64encode(JSON.stringify(data, null, 2)), sha: fileSha, branch: "main" }),
+    });
+    if (!r.ok) throw new Error("GitHub " + r.status);
+    fileSha = (await r.json()).content.sha;
+    setStatus("সংরক্ষিত হয়েছে। কয়েক মিনিটে সাইটে দেখা যাবে।");
+  } catch (err) { setStatus("সংরক্ষণ হয়নি: " + err.message); }
+};
+
+async function showApp() {
+  document.getElementById("login").classList.add("hidden");
+  app.classList.remove("hidden");
+  document.getElementById("bar").classList.remove("hidden");
+  document.getElementById("logout").classList.remove("hidden");
+  try { await loadContent(); renderAll(); setStatus("লোড হয়েছে"); }
+  catch (err) { setStatus("লোড হয়নি: " + err.message); }
+}
+
+function loadIdentity() {
+  return new Promise((resolve, reject) => {
+    if (window.netlifyIdentity) return resolve();
+    const s = document.createElement("script");
+    s.src = "https://identity.netlify.com/v1/netlify-identity-widget.js";
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("লগইন সিস্টেম লোড হয়নি। ব্রাউজারের অ্যাড-ব্লকার বন্ধ করে পেজ রিফ্রেশ দিন।"));
+    document.head.appendChild(s);
+  });
+}
+
+loadIdentity().then(() => {
+  netlifyIdentity.on("init", user => { if (user) showApp(); });
+  netlifyIdentity.on("login", () => { netlifyIdentity.close(); showApp(); });
+  netlifyIdentity.on("logout", () => location.reload());
+  document.getElementById("loginBtn").onclick = () => netlifyIdentity.open();
+  document.getElementById("logout").onclick = () => netlifyIdentity.logout();
+  netlifyIdentity.init();
+}).catch(err => {
+  document.querySelector("#login .msg").textContent = err.message;
+});
+</script>
 </body>
 </html>
